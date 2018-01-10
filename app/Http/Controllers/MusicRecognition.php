@@ -31,14 +31,8 @@ class MusicRecognition extends Controller
 
     	return $this->recognitioRequest($fileName);
 
-		Storage::delete("$this->path/$fileName");
-
     }
 
-
-    private function alternativa($filename){
-
-    }
     private function recognitioRequest($fileName){
     	$filePath = $this->path."/".$fileName;
 
@@ -79,6 +73,9 @@ class MusicRecognition extends Controller
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
 		$result = curl_exec($ch);
+
+		Storage::delete($filePath);
+		
 		if($result){
 			return $result;
 		}else{
@@ -91,6 +88,4 @@ class MusicRecognition extends Controller
 		$this->ACR_ACCESS_KEY = env("ACR_ACCESS_KEY", "your access key");
 		$this->ACR_ACCESS_SECRET = env("ACR_ACCESS_SECRET", "your access secret");
     }
-
-
 }
