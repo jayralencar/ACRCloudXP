@@ -10,81 +10,87 @@ use Illuminate\Support\Facades\Storage;
 class MusicRecognition extends Controller
 {
 
+	private $http_method = "POST";
+	private $http_uri = "/v1/identify";
+	private $data_type = "audio";
+	private $signature_version = "1" ;
 	private $path = "musics";
 	private $ACR_HOST;
 	private $ACR_ACCESS_KEY;
 	private $ACR_ACCESS_SECRET;
 
 
-	public function sendFile(Request $request){
-		$this->getEnv();
-		$file = Input::file('file');
+    public function sendFile(Request $request){
+    	$this->getEnv();
+    	$file = Input::file('file');
+       
+    	$ext = $file->getClientOriginalExtension();
+    	$fileName = rand(1111,9999) .'.'.$ext;
 
-		$ext = $file->getClientOriginalExtension();
-		$fileName = rand(1111,9999) .'.'.$ext;
+    	$file->storeAs($this->path, $fileName);
 
-		$file->storeAs($this->path, $fileName);
-
-		return $this->recognitioRequest($fileName);
+    	return $this->recognitioRequest($fileName);
 
 		Storage::delete("$this->path/$fileName");
 
-	}
+    }
 
-	private function recognitioRequest($fileName){
-		$filePath = $this->path."/".$fileName;
 
-		$timestamp = time();
+    private function alternativa($filename){
 
-		$string_to_sign = $this->http_method . "\n" . 
-		$this->http_uri ."\n" . 
-		$this->ACR_ACCESS_KEY . "\n" . 
-		$this->data_type . "\n" . 
-		$this->signature_version . "\n" . 
-		$timestamp;
+    }
+    private function recognitioRequest($fileName){
+    	$filePath = $this->path."/".$fileName;
 
-		$signature = hash_hmac("sha1", $string_to_sign, $this->ACR_ACCESS_SECRET, true);
+    	$timestamp = time();
 
-		$signature = base64_encode($signature);
+    	$string_to_sign = $this->http_method . "\n" . 
+                  $this->http_uri ."\n" . 
+                  $this->ACR_ACCESS_KEY . "\n" . 
+                  $this->data_type . "\n" . 
+                  $this->signature_version . "\n" . 
+                  $timestamp;
 
-		$filesize =  Storage::size($filePath);
+    	$signature = hash_hmac("sha1", $string_to_sign, $this->ACR_ACCESS_SECRET, true);
 
-		$realPath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
+    	$signature = base64_encode($signature);
 
-		$realPath .= $filePath;
+    	$filesize =  Storage::size($filePath);
 
-		$cfile = new \CURLFile($realPath,'mp3', $fileName);
+    	$realPath  = Storage::disk('local')->getDriver()->getAdapter()->getPathPrefix();
 
-		$postfields = array(
-			"sample" => $cfile, 
-			"sample_bytes"=>$filesize, 
-			"access_key"=>$this->ACR_ACCESS_KEY, 
-			"data_type"=>$this->data_type, 
-			"signature"=>$signature, 
-			"signature_version"=>$this->signature_version, 
-			"timestamp"=>$timestamp);
+    	$realPath .= $filePath;
 
-		$ch = curl_init();
+    	$cfile = new \CURLFile($realPath,'mp3', $fileName);
+
+    	$postfields = array(
+               "sample" => $cfile, 
+               "sample_bytes"=>$filesize, 
+               "access_key"=>$this->ACR_ACCESS_KEY, 
+               "data_type"=>$this->data_type, 
+               "signature"=>$signature, 
+               "signature_version"=>$this->signature_version, 
+               "timestamp"=>$timestamp);
+
+    	$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $this->ACR_HOST);
 		curl_setopt($ch, CURLOPT_POST, true);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $postfields);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 
 		$result = curl_exec($ch);
-		var_dump($result);
 		if($result){
-			return curl_getinfo($ch);
+			return $result;
 		}else{
 			return curl_error($ch);
 		}
-		curl_close($ch);
-	}
+    }
 
-	private function getEnv(){
-		$this->ACR_HOST = env("ACR_HOST", "your host");
+    private function getEnv(){
+    	$this->ACR_HOST = env("ACR_HOST", "your host");
 		$this->ACR_ACCESS_KEY = env("ACR_ACCESS_KEY", "your access key");
 		$this->ACR_ACCESS_SECRET = env("ACR_ACCESS_SECRET", "your access secret");
-	}
+    }
 
 
 }
