@@ -21,3 +21,10 @@ ACR_HOST="http://###YOUR PROJECT HOST HERE###/v1/identify"
 ACR_ACCESS_KEY=YOUR ACCESS KEY HERE
 ACR_ACCESS_SECRET=YOUR ACCESS SECRET KEY HERE
 ```
+
+## API information
+
+``` 
+POST api/v1/send-file 
+```
+This route receive a mp3 file with the target 'file'.
